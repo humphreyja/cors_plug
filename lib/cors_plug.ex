@@ -70,6 +70,7 @@ defmodule CORSPlug do
     end
   end
 
+  defp test_domain(_domains, nil), do: "*"
   defp test_domain([], _req_origin), do: {:error, :not_found}
   defp test_domain([domain|rest], req_origin) do
      {:ok, r} = Regex.compile(domain)
