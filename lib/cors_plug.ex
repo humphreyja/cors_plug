@@ -3,7 +3,7 @@ defmodule CORSPlug do
 
   def defaults do
     [
-      domains:      ["http(s)?:\/\/.*\.syntech\.io.*"],
+      domains:      ["(http(s)?:\/\/)?localhost.*"],
       credentials: true,
       max_age:     1728000,
       headers:     ["Authorization", "Content-Type", "Accept", "Origin",
@@ -76,7 +76,7 @@ defmodule CORSPlug do
      {:ok, r} = Regex.compile(domain)
      if Regex.match?(r, req_origin) do
        IO.puts "MATCHING ORIGIN: #{inspect domain} to #{inspect req_origin}"
-       domain
+       req_origin
      else
        IO.puts "NO MATCH FOR: #{inspect req_origin} IN: #{inspect [domain|rest]}"
        test_domain(rest, req_origin)

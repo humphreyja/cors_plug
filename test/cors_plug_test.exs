@@ -1,7 +1,7 @@
 defmodule CORSPlugTest do
   use ExUnit.Case
   use Plug.Test
-  import Plug.Conn, only: [get_resp_header: 2]
+
 
   test "returns the right options for regular requests" do
     opts = CORSPlug.init([])
@@ -13,12 +13,12 @@ defmodule CORSPlugTest do
   end
 
   test "lets me overwrite options" do
-    opts = CORSPlug.init(origin: "example.com")
-    conn = conn(:get, "/", nil, headers: [{"origin", "example.com"}])
+    opts = CORSPlug.init(domains: ["(http(s)?:\/\/)?localhost.*"])
+    conn = conn(:get, "/", nil) |> put_req_header("origin", "localhost:3000")
 
     conn = CORSPlug.call(conn, opts)
 
-    assert ["example.com"] ==
+    assert ["localhost:3000"] ==
            get_resp_header(conn, "access-control-allow-origin")
   end
 
@@ -43,32 +43,22 @@ defmodule CORSPlugTest do
   end
 
   test "returns the origin when it is valid" do
-    opts = CORSPlug.init(origin: ["example1.com", "example2.com"])
-    conn = conn(:get, "/", nil, headers: [{"origin", "example1.com"}])
+    opts = CORSPlug.init(domains: ["(http(s)?:\/\/)?localhost.*"])
+    conn = conn(:get, "/", nil) |> put_req_header("origin", "localhost:3000")
 
     conn = CORSPlug.call(conn, opts)
-    assert assert ["example1.com"] ==
+    assert assert ["localhost:3000"] ==
            get_resp_header(conn, "access-control-allow-origin")
   end
 
   test "returns null string when the origin is invalid" do
-    opts = CORSPlug.init(origin: ["example1.com"])
-    conn = conn(:get, "/", nil, headers: [{"origin", "example2.com"}])
+    opts = CORSPlug.init(domains: ["(http(s)?:\/\/)?localhost.*"])
+    conn = conn(:get, "/", nil) |> put_req_header("origin", "example2.com")
 
     conn = CORSPlug.call(conn, opts)
     assert ["null"] == get_resp_header conn, "access-control-allow-origin"
   end
 
-  test "returns the request host when origin is :self" do
-    opts = CORSPlug.init(origin: [:self])
-    conn = conn(:get, "/", nil,
-                headers: [{"origin", "http://cors-plug.example"}])
-
-    conn = CORSPlug.call(conn, opts)
-
-    assert ["http://cors-plug.example"] ==
-           get_resp_header(conn, "access-control-allow-origin")
-  end
 
   test "exposed headers are returned" do
     opts = CORSPlug.init(expose: ["content-range", "content-length", "accept-ranges"])
@@ -82,8 +72,7 @@ defmodule CORSPlugTest do
 
   test "allows all incoming headers" do
     opts = CORSPlug.init(headers: ["*"])
-    conn = conn(:options, "/", nil,
-                headers: [{"access-control-request-headers", "custom-header,upgrade-insecure-requests"}])
+    conn = conn(:options, "/", nil) |> put_req_header("access-control-request-headers", "custom-header,upgrade-insecure-requests")
 
     conn = CORSPlug.call(conn, opts)
 
